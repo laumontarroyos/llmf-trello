@@ -3,28 +3,102 @@ from flask import jsonify, url_for, redirect, Response, request
 from ..views import helper
 from flask_jwt_extended import jwt_required, get_current_user, get_jwt_identity
 
-import requests
+import requests, json
 
 
-@app.route('/teste', methods=['GET'])
-def teste():
-    return jsonify({'message': f'Olá Laureano!'})
+#@app.route('/', methods=['GET'])
+#@jwt_required
+#def root():
+#    return jsonify({'message': f'Hello {get_current_user()}'})
 
 
-@app.route('/', methods=['GET'])
-@jwt_required
-def root():
-    return jsonify({'message': f'Hello {get_current_user()}'})
-
-
-@app.route('/authenticate', methods=['POST'])
-def authenticate():
-    return helper.auth()
+#@app.route('/authenticate', methods=['POST'])
+#def authenticate():
+#    return helper.auth()
 
 #@jwt_required
 #@app.route('/users/<id>', methods=['DELETE'])
 #def delete_users(id):
 #    return users.delete_user(id)
+
+def limpar_escolhas(login):
+    # recuperar todas as varas
+    payload = {   
+        "key": f"{app.config['TRELLO_KEY']}",
+        "token": f"{app.config['TRELLO_TOKEN']}",
+        "fields": "id,name,subscribed"
+    }
+    url = f"https://api.trello.com/1/boards/{app.config['TRELLO_BOARD']}/lists"
+    r = requests.get(url, json=payload)
+    varas = json.loads( r.text )
+    if(varas!=None):
+        for vara in varas:
+            if(vara['subscribed'] == False):
+                # recuperar todos os magistrados concorrendo a uma Vara
+                payload = {   
+                    "key": f"{app.config['TRELLO_KEY']}",
+                    "token": f"{app.config['TRELLO_TOKEN']}"
+                }    
+                url = f"https://api.trello.com/1/lists/{vara['id']}/cards"
+                r = requests.get(url, json=payload)
+                magistrados = json.loads( r.text )
+                if(magistrados!=None):
+                    for magistrado in magistrados:
+                        if(login in(magistrado['name'])):
+                            # excluir magistrado desta escolha de vara
+                            payload = {   
+                                "key": f"{app.config['TRELLO_KEY']}",
+                                "token": f"{app.config['TRELLO_TOKEN']}"
+                            }
+                            url = f"https://api.trello.com/1/cards/{magistrado['id']}"
+                            r = requests.delete(url, json=payload)
+                            break
+    return                        
+
+@app.route('/trello/limpar', methods=['POST'])
+def post_limpar_escolhas():
+    data = request.get_json()
+    if(data!=None):
+        limpar_escolhas(data['login'])
+        return jsonify({"Mensagem": "Limpar escolhas do Magistrados", "retorno": "As escolhas existentes para o magistrado foram apagadas."})
+    return jsonify({"Mensagem": "Limpar escolhas do Magistrados", "retorno": "Não foi possível identificar o magistrado para limpar suas escolhas."})
+
+    
+
+# Preencher escolhas dos Magistrados/
+#  Lista de varas deve chegar na ordem escolhida
+@app.route('/trello/magistrados', methods=['POST'])
+def post_preencher_escolhas():
+    data = request.get_json()
+    if(data!=None):
+        limpar_escolhas(data['login'])
+        nome_magistrado = f"{data['magistrado']}/{data['login']}"
+        NumeroOpcao = 1
+        for vara in data['varas']:
+            #Inclusão do magistrado em cada vara escolhida pela ordem de preferência
+            payload = {   
+                "key": f"{app.config['TRELLO_KEY']}",
+                "token": f"{app.config['TRELLO_TOKEN']}",
+                "idList": f"{vara['id']}",
+                "name" : f"{NumeroOpcao} - {nome_magistrado}"
+            }
+            url = f"https://api.trello.com/1/cards"
+            r = requests.post(url, json=payload)
+            NumeroOpcao = NumeroOpcao + 1
+        return jsonify({"Mensagem": "Preencher escolhas do Magistrado", "retorno": "Escolhas feitas pelo magistrado enviadas ao quadro do Trello."})  
+    return jsonify({"Mensagem": "Preencher escolhas do Magistrado", "retorno": "Não foi possível identificar as escolhas do magistrado."})
+
+#Consultar Varas disponíveis para procedimento de remoção de magistrados
+@app.route('/trello/varas', methods=['GET'])
+def get_varas():
+    payload = {   
+            "key": f"{app.config['TRELLO_KEY']}",
+            "token": f"{app.config['TRELLO_TOKEN']}",
+            "fields": "id,name"
+    }
+    url = f"https://api.trello.com/1/boards/{app.config['TRELLO_BOARD']}/lists"
+    r = requests.get(url, json=payload)
+    return jsonify({"Mensagem": "Consultar Varas para Remoção de Magistrados", "retorno": f"{r.text}" })
 
 
 #Consulta Listas de um Quadro <id>

@@ -6,20 +6,14 @@ from flask_jwt_extended import jwt_required, get_current_user, get_jwt_identity
 import requests, json
 
 
-#@app.route('/', methods=['GET'])
-#@jwt_required
-#def root():
-#    return jsonify({'message': f'Hello {get_current_user()}'})
+@app.route('/check', methods=['GET'])
+@jwt_required
+def check():
+    return jsonify({'message': f'Ok, checked...'})
 
-
-#@app.route('/authenticate', methods=['POST'])
-#def authenticate():
-#    return helper.auth()
-
-#@jwt_required
-#@app.route('/users/<id>', methods=['DELETE'])
-#def delete_users(id):
-#    return users.delete_user(id)
+@app.route('/login', methods=['POST'])
+def authenticate():
+    return helper.auth()
 
 def limpar_escolhas(login):
     # recuperar todas as varas
@@ -56,6 +50,7 @@ def limpar_escolhas(login):
     return                        
 
 @app.route('/trello/limpar', methods=['POST'])
+@jwt_required
 def post_limpar_escolhas():
     data = request.get_json()
     if(data!=None):
@@ -68,6 +63,7 @@ def post_limpar_escolhas():
 # Preencher escolhas dos Magistrados/
 #  Lista de varas deve chegar na ordem escolhida
 @app.route('/trello/magistrados', methods=['POST'])
+@jwt_required
 def post_preencher_escolhas():
     data = request.get_json()
     if(data!=None):
@@ -90,6 +86,7 @@ def post_preencher_escolhas():
 
 #Consultar Varas disponíveis para procedimento de remoção de magistrados
 @app.route('/trello/varas', methods=['GET'])
+@jwt_required
 def get_varas():
     payload = {   
             "key": f"{app.config['TRELLO_KEY']}",
@@ -103,6 +100,7 @@ def get_varas():
 
 #Consulta Listas de um Quadro <id>
 @app.route('/trello/lists', methods=['GET'])
+@jwt_required
 def get_lists():
     payload = {   
             "key": f"{app.config['TRELLO_KEY']}",
@@ -114,6 +112,7 @@ def get_lists():
 
 #Consulta uma Lista <id>
 @app.route('/trello/lists/<id>', methods=['GET'])
+@jwt_required
 def get_list(id):
     payload = {   
             "key": f"{app.config['TRELLO_KEY']}",
@@ -125,6 +124,7 @@ def get_list(id):
 
 #Consulta Cartões de uma Lista <id>
 @app.route('/trello/lists/<id>/cards', methods=['GET'])
+@jwt_required
 def get_list_cards(id):
     payload = {   
             "key": f"{app.config['TRELLO_KEY']}",
@@ -136,6 +136,7 @@ def get_list_cards(id):
 
 #Inclusão de um Cartão 'name' na lista <id>
 @app.route('/trello/lists/<id>/cards', methods=['POST'])
+@jwt_required
 def post_list_cards(id):
     payload = {   
             "key": f"{app.config['TRELLO_KEY']}",
@@ -149,6 +150,7 @@ def post_list_cards(id):
 
 # Exclusão de um Cartão <id>
 @app.route('/trello/cards/<id>', methods=['DELETE'])
+@jwt_required
 def delete_cards(id):
     payload = {   
             "key": f"{app.config['TRELLO_KEY']}",

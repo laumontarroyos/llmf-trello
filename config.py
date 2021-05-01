@@ -1,4 +1,3 @@
-
 import random
 import string
 from os import environ, path
@@ -19,12 +18,10 @@ class Config:
          for i in range(12))    
     
     JWT_SECRET_KEY = key 
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(
-        minutes=int(environ.get('JWT_ACCESS_TOKEN_EXPIRES'))
-    )
-   
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=int(environ.get('JWT_ACCESS_TOKEN_EXPIRES')))
+    LLMF_API_USER = environ.get('LLMF_API_USER')
+    LLMF_API_PASSWORD_HASH = environ.get('LLMF_API_PASSWORD_HASH')
     DEBUG = environ.get('DEBUG')
-
     TRELLO_KEY = environ.get('TRELLO_KEY')
     TRELLO_TOKEN = environ.get('TRELLO_TOKEN')
     TRELLO_BOARD = environ.get('TRELLO_BOARD')

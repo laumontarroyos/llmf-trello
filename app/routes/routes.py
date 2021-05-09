@@ -91,7 +91,7 @@ def get_varas():
     payload = {   
             "key": f"{app.config['TRELLO_KEY']}",
             "token": f"{app.config['TRELLO_TOKEN']}",
-            "fields": "id,name"
+            "fields": "id,name,subscribed"
     }
     url = f"https://api.trello.com/1/boards/{app.config['TRELLO_BOARD']}/lists"
     r = requests.get(url, json=payload)

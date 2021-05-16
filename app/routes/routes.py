@@ -4,6 +4,10 @@ from ..views import helper
 from flask_jwt_extended import jwt_required, get_current_user, get_jwt_identity
 
 import requests, json
+#from jsonpath_ng import jsonpath, parse
+
+from jsonpath_ng import jsonpath
+from jsonpath_ng.ext import parse
 
 
 @app.route('/check', methods=['GET'])
@@ -95,9 +99,17 @@ def get_varas():
     }
     url = f"https://api.trello.com/1/boards/{app.config['TRELLO_BOARD']}/lists"
     r = requests.get(url, json=payload)
-    return jsonify({"Mensagem": "Consultar Varas para Remoção de Magistrados", "retorno": f"{r.text}" })
-
-
+    retorno_json = json.loads(r.text)
+    jsonpath_expression = parse("$[?(@.subscribed==false)]")
+    match = jsonpath_expression.find(retorno_json)
+    lista=[]
+    for i in range(len(match)):
+        lista.append(match[i].value)
+    if (len(match) > 0):
+        return jsonify({"Mensagem": "Consultar Varas para Remoção de Magistrados", "retorno": f"{lista}" })
+    else:
+        return jsonify({"Mensagem": "Consultar Varas para Remoção de Magistrados", "retorno": "Não foram encontradas varas disponíveis."})
+ 
 #Consulta Listas de um Quadro <id>
 @app.route('/trello/lists', methods=['GET'])
 @jwt_required
